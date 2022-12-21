@@ -29,9 +29,16 @@ class DemoApplication {
         Database.connect(ds)
         transaction {
             addLogger(StdOutSqlLogger)
-            SchemaUtils.create(Users, Roles, UsersRoles)
+            SchemaUtils.create(Cities, Users, Roles, UsersRoles)
+
+            val bj = Cities.insertAndGetId {
+                it[name] = "Beijing"
+            }
+            commit()
+
             val uid = Users.insertAndGetId {
                 it[name] = "Daniel"
+                it[city] = bj
             }
             commit()
             println(uid.value)
@@ -74,8 +81,14 @@ class DemoApplication {
     }
 }
 
+object Cities: UUIDTable("cities") {
+    val name = varchar("name", 50)
+}
+
 object Users : UUIDTable("users") {
     val name = varchar("name", 50)
+//    val cityId = (uuid("city_id").references(Cities.id)).nullable()
+    var city = reference("city_id", Cities) //.nullable()
 }
 
 object Roles: LongIdTable("roles") {
@@ -88,6 +101,12 @@ object UsersRoles: Table("user_role") {
     override val primaryKey = PrimaryKey(
         user, role,
         name = "PK_USER_ROLE")
+}
+
+class City(id: EntityID<UUID>): UUIDEntity(id) {
+    companion object: UUIDEntityClass<City>(Cities)
+    var name by Cities.name
+    val users by User referrersOn Users.city
 }
 
 class User(id: EntityID<UUID>): UUIDEntity(id) {
