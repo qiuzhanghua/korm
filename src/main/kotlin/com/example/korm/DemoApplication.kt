@@ -28,6 +28,7 @@ class DemoApplication {
 //        println(ds.connection)
         Database.connect(ds)
         transaction {
+            addLogger(StdOutSqlLogger)
             SchemaUtils.create(Users, Roles, UsersRoles)
             val uid = Users.insertAndGetId {
                 it[name] = "Daniel"
